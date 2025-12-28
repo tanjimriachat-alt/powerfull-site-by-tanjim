@@ -37,7 +37,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // SECURITY: Only allow main admin to perform database write
     if (!isMainAdmin) {
       alert("Only the owner (Tanjim) can change this photo.");
       return;
@@ -46,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 1024 * 1024) { // Limit to 1MB for Realtime DB storage
+    if (file.size > 1024 * 1024) {
       alert("Image is too large. Please select an image under 1MB.");
       return;
     }
@@ -64,7 +63,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         });
       } catch (err) {
         console.error("Upload error:", err);
-        alert("Failed to save image. Check your Firebase permissions.");
       } finally {
         setIsUploading(false);
       }
@@ -73,7 +71,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const triggerFileUpload = () => {
-    // Only trigger if the user is the Main Admin
     if (isMainAdmin && fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -81,7 +78,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Hidden File Input - Only accessible via ref by Main Admin */}
       {isMainAdmin && (
         <input 
           type="file" 
@@ -92,7 +88,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Mobile Menu Button */}
       <button 
         onClick={toggle}
         className="md:hidden fixed top-4 left-4 z-[60] bg-indigo-600 text-white p-3 rounded-2xl shadow-xl active:scale-95 transition-all"
@@ -100,7 +95,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         {isOpen ? '✕' : '☰ Menu'}
       </button>
 
-      {/* Overlay */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-300"
@@ -108,13 +102,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Sidebar Container */}
       <aside className={`
         fixed md:static inset-y-0 left-0 w-80 bg-slate-900 text-slate-100 flex flex-col z-50
         transition-all duration-500 ease-in-out transform md:translate-x-0
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        {/* Sidebar Header */}
         <div className="p-8 pb-4 text-center">
           <div className="inline-block p-6 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-[2.5rem] border border-white/10 mb-6 group hover:scale-105 transition-transform">
             <h2 className="font-cursive text-6xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 drop-shadow-md leading-tight">Tanjim</h2>
@@ -127,39 +119,36 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto mt-6 px-6 space-y-2 scrollbar-hide">
           {Object.entries(SUBJECT_NAMES).map(([key, name]) => (
-            <button
-              key={key}
-              onClick={() => {
-                onSubjectChange(key as SubjectKey);
-                setIsOpen(false);
-              }}
-              className={`
-                w-full text-left px-5 py-3.5 rounded-2xl transition-all font-bengali font-bold text-sm
-                flex items-center gap-4 relative overflow-hidden group
-                ${currentSubject === key 
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-900/20 scale-[1.02]' 
-                  : 'hover:bg-slate-800 text-slate-400 hover:text-white'}
-              `}
-            >
-              <span className={`w-2 h-2 rounded-full ${currentSubject === key ? 'bg-white animate-pulse' : 'bg-slate-700'}`}></span>
-              {name}
-              {currentSubject === key && (
-                <div className="absolute right-[-10px] top-[-10px] w-12 h-12 bg-white/10 rounded-full blur-xl" />
-              )}
-            </button>
+            <React.Fragment key={key}>
+              {key === 'archive' && <div className="pt-4 pb-2 border-t border-slate-800/50 mt-4 mx-2" />}
+              <button
+                onClick={() => {
+                  onSubjectChange(key as SubjectKey);
+                  setIsOpen(false);
+                }}
+                className={`
+                  w-full text-left px-5 py-3.5 rounded-2xl transition-all font-bengali font-bold text-sm
+                  flex items-center gap-4 relative overflow-hidden group
+                  ${currentSubject === key 
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-900/20 scale-[1.02]' 
+                    : (key === 'archive' ? 'bg-slate-800/40 text-slate-400 hover:text-amber-400 hover:bg-slate-800' : 'hover:bg-slate-800 text-slate-400 hover:text-white')}
+                `}
+              >
+                <span className={`w-2 h-2 rounded-full ${currentSubject === key ? 'bg-white animate-pulse' : (key === 'archive' ? 'bg-amber-500/40' : 'bg-slate-700')}`}></span>
+                {name}
+                {key === 'archive' && <span className="ml-auto text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full border border-amber-500/20">OLD</span>}
+              </button>
+            </React.Fragment>
           ))}
         </nav>
 
-        {/* Footer Actions */}
         <div className="p-6 space-y-4">
           <div className="relative">
             {showInfo && (
               <div className="absolute bottom-full left-0 w-full mb-4 bg-white text-slate-900 p-6 rounded-[2rem] shadow-2xl animate-in slide-in-from-bottom-4 duration-300 border border-slate-100">
                 <div className="text-center mb-4">
-                  {/* Profile Picture Container */}
                   <div 
                     onClick={triggerFileUpload}
                     className={`
@@ -177,8 +166,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                     ) : (
                       <span className="text-4xl text-indigo-400">👤</span>
                     )}
-                    
-                    {/* ONLY SHOW EDIT OVERLAY FOR MAIN ADMIN */}
                     {isMainAdmin && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
                         <span className="text-white text-lg">📷</span>

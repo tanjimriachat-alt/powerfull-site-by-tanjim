@@ -1,9 +1,9 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { SubjectKey, AcademyData, SUBJECT_NAMES, Chapter } from '../types';
 import ChapterCard from './ChapterCard';
 import EditorModal from './EditorModal';
-import { set, ref } from 'firebase/database';
+import { set, ref, onValue } from 'firebase/database';
 import { database } from '../firebase';
 
 interface DashboardProps {
@@ -16,8 +16,25 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
   const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingChapter, setEditingChapter] = useState<{ chapter: Chapter | null, index: number | null } | null>(null);
+  
+  // Sub-subject for archive mode
+  const [archiveSubSubject, setArchiveSubSubject] = useState<SubjectKey>('p1');
+  const [archiveData, setArchiveData] = useState<Chapter[]>([]);
 
-  const chapters = masterData[subjectKey] || [];
+  const isArchiveMode = subjectKey === 'archive';
+  
+  // Real-time listener for archive data specifically when in archive mode
+  useEffect(() => {
+    if (isArchiveMode) {
+      const archiveRef = ref(database, `archiveData/${archiveSubSubject}`);
+      const unsub = onValue(archiveRef, (snapshot) => {
+        setArchiveData(snapshot.val() || []);
+      });
+      return () => unsub();
+    }
+  }, [isArchiveMode, archiveSubSubject]);
+
+  const chapters = isArchiveMode ? archiveData : (masterData[subjectKey] || []);
 
   const filteredChapters = useMemo(() => {
     return chapters.filter(ch => 
@@ -35,16 +52,13 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
     }
 
     try {
-      const subjectRef = ref(database, `academyData/${subjectKey}`);
-      await set(subjectRef, subjectChapters);
+      const path = isArchiveMode ? `archiveData/${archiveSubSubject}` : `academyData/${subjectKey}`;
+      const dataRef = ref(database, path);
+      await set(dataRef, subjectChapters);
       setEditingChapter(null);
     } catch (err: any) {
       console.error("Save error:", err);
-      if (err.message.includes("PERMISSION_DENIED")) {
-        alert("ভুল (Error): ডেটাবেসে অনুমতি নেই (Permission Denied)!\n\nআপনাকে Firebase Console-এ গিয়ে Realtime Database-এর Rules ট্যাবে \".write\": true করে দিতে হবে। তা না হলে সেভ হবে না।");
-      } else {
-        alert("সেভ করতে সমস্যা হয়েছে। দয়া করে আপনার ইন্টারনেট কানেকশন চেক করুন।");
-      }
+      alert("সেভ করতে সমস্যা হয়েছে। দয়া করে আপনার ইন্টারনেট কানেকশন বা পারমিশন চেক করুন।");
     }
   };
 
@@ -55,14 +69,11 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
     subjectChapters.splice(index, 1);
     
     try {
-      const subjectRef = ref(database, `academyData/${subjectKey}`);
-      await set(subjectRef, subjectChapters);
+      const path = isArchiveMode ? `archiveData/${archiveSubSubject}` : `academyData/${subjectKey}`;
+      const dataRef = ref(database, path);
+      await set(dataRef, subjectChapters);
     } catch (err: any) {
-      if (err.message.includes("PERMISSION_DENIED")) {
-        alert("ভুল (Error): ডিলিট করার অনুমতি নেই। Firebase Rules চেক করুন।");
-      } else {
-        alert("ডিলিট করতে সমস্যা হয়েছে।");
-      }
+      alert("ডিলিট করতে সমস্যা হয়েছে।");
     }
   };
 
@@ -71,9 +82,11 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
           <h1 className="text-4xl md:text-5xl font-bold text-slate-800 font-bengali tracking-tight">
-            {SUBJECT_NAMES[subjectKey]}
+            {isArchiveMode ? "Resource Archive" : SUBJECT_NAMES[subjectKey]}
           </h1>
-          <p className="text-slate-500 mt-2 font-medium text-lg">HSC Comprehensive Resource Hub</p>
+          <p className="text-slate-500 mt-2 font-medium text-lg">
+            {isArchiveMode ? `Old Resources for ${SUBJECT_NAMES[archiveSubSubject]}` : "HSC Comprehensive Resource Hub"}
+          </p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
@@ -98,18 +111,14 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
                     w-14 h-7 rounded-full transition-all relative flex items-center
                     ${editMode ? 'bg-indigo-600' : 'bg-slate-300'}
                   `}
-                  aria-label="Toggle edit mode"
                 >
-                  <div className={`
-                    absolute w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ease-in-out
-                    ${editMode ? 'translate-x-8' : 'translate-x-1'}
-                  `} />
+                  <div className={`absolute w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${editMode ? 'translate-x-8' : 'translate-x-1'}`} />
                 </button>
               </div>
               {editMode && (
                 <button 
                   onClick={() => setEditingChapter({ chapter: null, index: null })}
-                  className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2"
+                  className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg flex items-center gap-2"
                 >
                   <span className="text-lg">+</span> Chapter
                 </button>
@@ -119,6 +128,25 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
         </div>
       </header>
 
+      {/* Archive Sub-Subject Selector */}
+      {isArchiveMode && (
+        <div className="mb-12 overflow-x-auto pb-4 scrollbar-hide">
+          <div className="flex gap-2 min-w-max">
+            {Object.entries(SUBJECT_NAMES).map(([key, name]) => (
+              key !== 'archive' && (
+                <button
+                  key={key}
+                  onClick={() => setArchiveSubSubject(key as SubjectKey)}
+                  className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all border ${archiveSubSubject === key ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'}`}
+                >
+                  {name}
+                </button>
+              )
+            ))}
+          </div>
+        </div>
+      )}
+
       {isAdmin && !editMode && (
         <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-700 text-sm font-semibold flex items-center gap-3 animate-pulse">
           <span>⚠️</span> চ্যাপ্টার অ্যাড বা ডিলিট করতে উপরে ডান পাশের <b>Admin Control</b> সুইচটি অন করুন।
@@ -127,13 +155,13 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
 
       {filteredChapters.length === 0 ? (
         <div className="text-center py-24 bg-white rounded-[3rem] border border-slate-200 shadow-sm">
-          <div className="text-7xl mb-6 animate-pulse">📖</div>
+          <div className="text-7xl mb-6 opacity-30">📚</div>
           <h3 className="text-2xl font-bold text-slate-400 font-bengali">
-            {searchQuery ? "No matching chapters found." : "No resources available for this subject."}
+            {searchQuery ? "No matching chapters found." : "No resources available here."}
           </h3>
           {isAdmin && editMode && (
             <p className="text-indigo-500 mt-4 font-bold cursor-pointer hover:underline" onClick={() => setEditingChapter({ chapter: null, index: null })}>
-              প্রথম চ্যাপ্টারটি যোগ করতে এখানে ক্লিক করুন!
+              {isArchiveMode ? `${SUBJECT_NAMES[archiveSubSubject]} এর আর্কাইভে প্রথম চ্যাপ্টারটি যোগ করুন!` : "প্রথম চ্যাপ্টারটি যোগ করতে এখানে ক্লিক করুন!"}
             </p>
           )}
         </div>
@@ -143,7 +171,7 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
             const originalIndex = chapters.indexOf(ch);
             return (
               <ChapterCard 
-                key={`${subjectKey}-${originalIndex}`}
+                key={`${subjectKey}-${archiveSubSubject}-${originalIndex}`}
                 chapter={ch}
                 isAdmin={isAdmin && editMode}
                 onEdit={() => setEditingChapter({ chapter: ch, index: originalIndex })}

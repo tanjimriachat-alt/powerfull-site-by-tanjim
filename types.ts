@@ -30,7 +30,7 @@ export interface DeveloperInfo {
   subtitle?: string;
 }
 
-export type SubjectKey = 'p1' | 'p2' | 'c1' | 'c2' | 'b1' | 'b2' | 'm1' | 'm2' | 'ict' | 'lan';
+export type SubjectKey = 'p1' | 'p2' | 'c1' | 'c2' | 'b1' | 'b2' | 'm1' | 'm2' | 'ict' | 'lan' | 'archive';
 
 export const SUBJECT_NAMES: Record<SubjectKey, string> = {
   p1: "Physics 1st",
@@ -42,5 +42,6 @@ export const SUBJECT_NAMES: Record<SubjectKey, string> = {
   m1: "Higher Math 1st",
   m2: "Higher Math 2nd",
   ict: "ICT",
-  lan: "Languages"
+  lan: "Languages",
+  archive: "Resource Archive"
 };
