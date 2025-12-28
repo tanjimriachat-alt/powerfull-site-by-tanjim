@@ -1,0 +1,8 @@
+{
+  "name": "TANJIM - Academic Nexus Live",
+  "description": "A comprehensive academic resource portal for HSC students featuring subject-wise chapters, class videos, and study notes with administrative controls and an AI study assistant.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
