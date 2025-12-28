@@ -1,13 +1,13 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { onValue, get } from 'firebase/database';
-import { dbRefs } from './firebase';
-import { AcademyData, AccessControl, SubjectKey, SUBJECT_NAMES } from './types';
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import Gateway from './components/Gateway';
-import LoginPopup from './components/LoginPopup';
-import AIAssistant from './components/AIAssistant';
+import { dbRefs } from './firebase.ts';
+import { AcademyData, AccessControl, SubjectKey, SUBJECT_NAMES } from './types.ts';
+import Sidebar from './components/Sidebar.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import Gateway from './components/Gateway.tsx';
+import LoginPopup from './components/LoginPopup.tsx';
+import AIAssistant from './components/AIAssistant.tsx';
 
 const CORE_ADMINS = [
   { u: "01866280090", p: "meherajwafi" },
