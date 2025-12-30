@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { onValue, get } from 'firebase/database';
-import { dbRefs } from './firebase.ts';
+import { signInAnonymously, signOut, onAuthStateChanged } from 'firebase/auth';
+import { dbRefs, auth } from './firebase.ts';
 import { AcademyData, AccessControl, SubjectKey, SUBJECT_NAMES } from './types.ts';
 import Sidebar from './components/Sidebar.tsx';
 import Dashboard from './components/Dashboard.tsx';
@@ -24,57 +25,93 @@ const App: React.FC = () => {
   const [masterData, setMasterData] = useState<AcademyData>({});
   const [loading, setLoading] = useState(false);
 
+  // Check for existing session on load
   useEffect(() => {
-    const unsubscribe = onValue(dbRefs.academyData(), (snapshot) => {
-      const data = snapshot.val() || {};
-      setMasterData(data);
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const savedSession = localStorage.getItem('nexus_session');
+        if (savedSession) {
+          const { isAdmin: savedIsAdmin, isMainAdmin: savedIsMain } = JSON.parse(savedSession);
+          setIsAdmin(savedIsAdmin);
+          setIsMainAdmin(savedIsMain);
+          setIsAuthenticated(true);
+        }
+      } else {
+        setIsAuthenticated(false);
+        localStorage.removeItem('nexus_session');
+      }
     });
-    return () => unsubscribe();
+
+    return () => unsubAuth();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const unsubscribe = onValue(dbRefs.academyData(), (snapshot) => {
+        const data = snapshot.val() || {};
+        setMasterData(data);
+      });
+      return () => unsubscribe();
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = async (u: string, p: string) => {
     setLoading(true);
     try {
+      await signInAnonymously(auth);
+
+      let finalIsAdmin = false;
+      let finalIsMainAdmin = false;
+
       // 1. Check Core Admins
       const coreMatch = CORE_ADMINS.find(a => a.u === u && a.p === p);
       if (coreMatch) {
-        setIsAdmin(true);
-        if (u === "01874816789") setIsMainAdmin(true);
-        setIsAuthenticated(true);
-        setShowLogin(null);
-        return;
+        finalIsAdmin = true;
+        finalIsMainAdmin = true;
+      } else {
+        // 2. Check Database
+        const snapshot = await get(dbRefs.access());
+        const data: AccessControl = snapshot.val() || { admins: {}, students: {} };
+        
+        let foundAdmin = Object.values(data.admins || {}).find(a => a.u === u && a.p === p);
+        if (foundAdmin) {
+          finalIsAdmin = true;
+          finalIsMainAdmin = false;
+        } else {
+          let foundStudent = Object.values(data.students || {}).find(s => s.u === u && s.p === p);
+          if (foundStudent) {
+            finalIsAdmin = false;
+            finalIsMainAdmin = false;
+          } else {
+            await signOut(auth);
+            alert("ভুল আইডি বা পাসওয়ার্ড!");
+            setLoading(false);
+            return;
+          }
+        }
       }
 
-      // 2. Check Database
-      const snapshot = await get(dbRefs.access());
-      const data: AccessControl = snapshot.val() || { admins: {}, students: {} };
-      
-      let foundAdmin = Object.values(data.admins || {}).find(a => a.u === u && a.p === p);
-      if (foundAdmin) {
-        setIsAdmin(true);
-        setIsAuthenticated(true);
-        setShowLogin(null);
-        return;
-      }
+      // Success Logic
+      setIsAdmin(finalIsAdmin);
+      setIsMainAdmin(finalIsMainAdmin);
+      setIsAuthenticated(true);
+      setShowLogin(null);
+      localStorage.setItem('nexus_session', JSON.stringify({
+        isAdmin: finalIsAdmin,
+        isMainAdmin: finalIsMainAdmin
+      }));
 
-      let foundStudent = Object.values(data.students || {}).find(s => s.u === u && s.p === p);
-      if (foundStudent) {
-        setIsAdmin(false);
-        setIsAuthenticated(true);
-        setShowLogin(null);
-        return;
-      }
-
-      alert("Incorrect credentials!");
     } catch (err) {
       console.error(err);
-      alert("Error authenticating. Try again.");
+      alert("কানেকশন এরর! ইন্টারনেট চেক করুন।");
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await signOut(auth);
+    localStorage.removeItem('nexus_session');
     setIsAuthenticated(false);
     setIsAdmin(false);
     setIsMainAdmin(false);

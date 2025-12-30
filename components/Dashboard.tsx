@@ -23,7 +23,7 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
 
   const isArchiveMode = subjectKey === 'archive';
   
-  // Real-time listener for archive data specifically when in archive mode
+  // Real-time listener for archive data specifically
   useEffect(() => {
     if (isArchiveMode) {
       const archiveRef = ref(database, `archiveData/${archiveSubSubject}`);
@@ -58,7 +58,7 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
       setEditingChapter(null);
     } catch (err: any) {
       console.error("Save error:", err);
-      alert("সেভ করতে সমস্যা হয়েছে। দয়া করে আপনার ইন্টারনেট কানেকশন বা পারমিশন চেক করুন।");
+      alert("সেভ করতে সমস্যা হয়েছে।");
     }
   };
 
@@ -81,17 +81,18 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
     <div className="max-w-7xl mx-auto pb-20">
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
-          <h1 className="text-4xl md:text-5xl font-bold text-slate-800 font-bengali tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-bold text-slate-800 font-bengali tracking-tight flex items-center gap-4">
+            {isArchiveMode && <span className="text-amber-500 text-3xl">📦</span>}
             {isArchiveMode ? "Resource Archive" : SUBJECT_NAMES[subjectKey]}
           </h1>
-          <p className="text-slate-500 mt-2 font-medium text-lg">
-            {isArchiveMode ? `Old Resources for ${SUBJECT_NAMES[archiveSubSubject]}` : "HSC Comprehensive Resource Hub"}
+          <p className="text-slate-500 mt-2 font-medium text-lg font-bengali">
+            {isArchiveMode ? `${SUBJECT_NAMES[archiveSubSubject]} এর পুরনো ক্লাস ও নোটসমূহ` : `${SUBJECT_NAMES[subjectKey]} এর লেটেস্ট ক্লাস ও নোটসমূহ`}
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <div className="relative group">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">🔍</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
             <input 
               type="text"
               placeholder="Search chapters..."
@@ -102,25 +103,22 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
           </div>
 
           {isAdmin && (
-            <div className="flex items-center gap-4 bg-white p-2.5 rounded-2xl border-2 border-indigo-100 shadow-xl shadow-indigo-50">
+            <div className="flex items-center gap-4 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm">
               <div className="flex items-center gap-3 px-4 py-1 border-r border-slate-100">
-                <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">Admin Control</span>
+                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Admin Mode</span>
                 <button 
                   onClick={() => setEditMode(!editMode)}
-                  className={`
-                    w-14 h-7 rounded-full transition-all relative flex items-center
-                    ${editMode ? 'bg-indigo-600' : 'bg-slate-300'}
-                  `}
+                  className={`w-12 h-6 rounded-full transition-all relative flex items-center ${editMode ? 'bg-indigo-600' : 'bg-slate-300'}`}
                 >
-                  <div className={`absolute w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${editMode ? 'translate-x-8' : 'translate-x-1'}`} />
+                  <div className={`absolute w-4 h-4 bg-white rounded-full transition-transform duration-300 ${editMode ? 'translate-x-7' : 'translate-x-1'}`} />
                 </button>
               </div>
               {editMode && (
                 <button 
                   onClick={() => setEditingChapter({ chapter: null, index: null })}
-                  className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg flex items-center gap-2"
+                  className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-lg"
                 >
-                  <span className="text-lg">+</span> Chapter
+                  + Add Chapter
                 </button>
               )}
             </div>
@@ -128,16 +126,21 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
         </div>
       </header>
 
-      {/* Archive Sub-Subject Selector */}
+      {/* Subject Sub-navigation for Archive Mode */}
       {isArchiveMode && (
-        <div className="mb-12 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="mb-10 overflow-x-auto pb-4 scrollbar-hide">
           <div className="flex gap-2 min-w-max">
             {Object.entries(SUBJECT_NAMES).map(([key, name]) => (
               key !== 'archive' && (
                 <button
                   key={key}
                   onClick={() => setArchiveSubSubject(key as SubjectKey)}
-                  className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all border ${archiveSubSubject === key ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'}`}
+                  className={`
+                    px-5 py-2.5 rounded-2xl font-bold text-sm transition-all border
+                    ${archiveSubSubject === key 
+                      ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-200' 
+                      : 'bg-white text-slate-500 border-slate-200 hover:bg-amber-50'}
+                  `}
                 >
                   {name}
                 </button>
@@ -147,22 +150,19 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
         </div>
       )}
 
-      {isAdmin && !editMode && (
-        <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-700 text-sm font-semibold flex items-center gap-3 animate-pulse">
-          <span>⚠️</span> চ্যাপ্টার অ্যাড বা ডিলিট করতে উপরে ডান পাশের <b>Admin Control</b> সুইচটি অন করুন।
-        </div>
-      )}
-
       {filteredChapters.length === 0 ? (
-        <div className="text-center py-24 bg-white rounded-[3rem] border border-slate-200 shadow-sm">
-          <div className="text-7xl mb-6 opacity-30">📚</div>
+        <div className="text-center py-32 bg-white rounded-[3rem] border border-slate-200 shadow-sm">
+          <div className="text-8xl mb-8 opacity-20">📂</div>
           <h3 className="text-2xl font-bold text-slate-400 font-bengali">
-            {searchQuery ? "No matching chapters found." : "No resources available here."}
+            {searchQuery ? "খুঁজে পাওয়া যায়নি" : "এই সেকশনে কোনো কন্টেন্ট নেই"}
           </h3>
           {isAdmin && editMode && (
-            <p className="text-indigo-500 mt-4 font-bold cursor-pointer hover:underline" onClick={() => setEditingChapter({ chapter: null, index: null })}>
-              {isArchiveMode ? `${SUBJECT_NAMES[archiveSubSubject]} এর আর্কাইভে প্রথম চ্যাপ্টারটি যোগ করুন!` : "প্রথম চ্যাপ্টারটি যোগ করতে এখানে ক্লিক করুন!"}
-            </p>
+            <button 
+              onClick={() => setEditingChapter({ chapter: null, index: null })}
+              className="mt-6 text-indigo-600 font-bold hover:underline"
+            >
+              নতুন চ্যাপ্টার যোগ করতে এখানে ক্লিক করুন
+            </button>
           )}
         </div>
       ) : (

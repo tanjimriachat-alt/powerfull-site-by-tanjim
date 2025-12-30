@@ -1,6 +1,7 @@
 
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, onValue, set, push, remove, get } from 'firebase/database';
+import { getDatabase, ref } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
     apiKey: "AIzaSyB5q1Uw6zFMOlw4NFgiSEiN8DyMBqWuGE0",
@@ -14,6 +15,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const database = getDatabase(app);
+export const auth = getAuth(app);
 
 export const dbRefs = {
   academyData: () => ref(database, 'academyData'),

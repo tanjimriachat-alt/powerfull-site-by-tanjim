@@ -99,7 +99,8 @@ const AccessManager: React.FC<AccessManagerProps> = ({ isMainAdmin, onClose }) =
                 <span className="w-2 h-2 rounded-full bg-emerald-500" /> Registered Students
               </h4>
               <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                {Object.entries(students).map(([id, s]) => (
+                {/* Fix: Explicitly cast Object.entries to resolve 'unknown' type errors for s.u and s.p */}
+                {(Object.entries(students) as [string, UserAccount][]).map(([id, s]) => (
                   <div key={id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center group">
                     <div className="flex flex-col">
                       <span className="font-bold text-slate-700 text-sm">{s.u}</span>
@@ -117,7 +118,8 @@ const AccessManager: React.FC<AccessManagerProps> = ({ isMainAdmin, onClose }) =
                   <span className="w-2 h-2 rounded-full bg-indigo-500" /> System Admins
                 </h4>
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                  {Object.entries(admins).map(([id, a]) => (
+                  {/* Fix: Explicitly cast Object.entries to resolve 'unknown' type errors for a.u and a.p */}
+                  {(Object.entries(admins) as [string, UserAccount][]).map(([id, a]) => (
                     <div key={id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center group">
                       <div className="flex flex-col">
                         <span className="font-bold text-slate-700 text-sm">{a.u}</span>
