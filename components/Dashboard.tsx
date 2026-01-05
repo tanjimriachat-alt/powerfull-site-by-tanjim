@@ -1,8 +1,9 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { SubjectKey, AcademyData, SUBJECT_NAMES, Chapter } from '../types';
+import { SubjectKey, AcademyData, SUBJECT_NAMES, Chapter, Resource } from '../types';
 import ChapterCard from './ChapterCard';
 import EditorModal from './EditorModal';
+import VideoPlayer from './VideoPlayer';
 import { set, ref, onValue } from 'firebase/database';
 import { database } from '../firebase';
 
@@ -10,13 +11,18 @@ interface DashboardProps {
   subjectKey: SubjectKey;
   isAdmin: boolean;
   masterData: AcademyData;
+  currentUser: string;
+  onLogAction: (user: string, action: string, details: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }) => {
+const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData, currentUser, onLogAction }) => {
   const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingChapter, setEditingChapter] = useState<{ chapter: Chapter | null, index: number | null } | null>(null);
   
+  // Video Player State
+  const [activeVideo, setActiveVideo] = useState<{ url: string, chapterName: string, resources: Resource[] } | null>(null);
+
   // Sub-subject for archive mode
   const [archiveSubSubject, setArchiveSubSubject] = useState<SubjectKey>('p1');
   const [archiveData, setArchiveData] = useState<Chapter[]>([]);
@@ -33,6 +39,11 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
       return () => unsub();
     }
   }, [isArchiveMode, archiveSubSubject]);
+
+  // Reset video player when subject changes
+  useEffect(() => {
+    setActiveVideo(null);
+  }, [subjectKey, archiveSubSubject]);
 
   const chapters = isArchiveMode ? archiveData : (masterData[subjectKey] || []);
 
@@ -76,6 +87,22 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
       alert("ডিলিট করতে সমস্যা হয়েছে।");
     }
   };
+
+  // If a video is active, show the player
+  if (activeVideo) {
+    return (
+      <div className="max-w-7xl mx-auto pb-20">
+        <VideoPlayer 
+          chapterName={activeVideo.chapterName}
+          videoUrl={activeVideo.url}
+          resources={activeVideo.resources}
+          onBack={() => setActiveVideo(null)}
+          currentUser={currentUser}
+          onLogAction={onLogAction}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto pb-20">
@@ -176,6 +203,11 @@ const Dashboard: React.FC<DashboardProps> = ({ subjectKey, isAdmin, masterData }
                 isAdmin={isAdmin && editMode}
                 onEdit={() => setEditingChapter({ chapter: ch, index: originalIndex })}
                 onDelete={() => handleDelete(originalIndex)}
+                onPlayClass={(videoUrl) => setActiveVideo({ 
+                  url: videoUrl, 
+                  chapterName: ch.name, 
+                  resources: ch.resources || [] 
+                })}
               />
             );
           })}

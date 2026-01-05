@@ -8,8 +8,8 @@ import { dbRefs } from '../firebase';
 interface SidebarProps {
   currentSubject: SubjectKey;
   onSubjectChange: (key: SubjectKey) => void;
-  isAdmin: boolean;
-  isMainAdmin: boolean;
+  isAdmin: boolean; 
+  isOwner: boolean; // This is the SUPER ADMIN flag
   onLogout: () => void;
 }
 
@@ -17,7 +17,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   currentSubject, 
   onSubjectChange, 
   isAdmin, 
-  isMainAdmin, 
+  isOwner,
   onLogout 
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,6 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [showInfo, setShowInfo] = useState(false);
   const [devInfo, setDevInfo] = useState<DeveloperInfo | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [logCount, setLogCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const toggle = () => setIsOpen(!isOpen);
@@ -36,17 +37,26 @@ const Sidebar: React.FC<SidebarProps> = ({
     return () => unsubscribe();
   }, []);
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isMainAdmin) {
-      alert("Only the owner (Tanjim) can change this photo.");
-      return;
+  // Live Notification Badge for Super Admin
+  useEffect(() => {
+    if (isOwner) {
+      const unsub = onValue(dbRefs.logs(), (snapshot) => {
+        if (snapshot.exists()) {
+          setLogCount(Object.keys(snapshot.val()).length);
+        }
+      });
+      return () => unsub();
     }
+  }, [isOwner]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isOwner) return;
 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 1024 * 1024) {
-      alert("Image is too large. Please select an image under 1MB.");
+    if (file.size > 1.5 * 1024 * 1024) {
+      alert("ফাইল সাইজ ১.৫ মেগাবাইটের বেশি হতে পারবে না।");
       return;
     }
 
@@ -61,6 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           name: "Riachat Tanjim Omar",
           subtitle: "HSC 26 | LGC"
         });
+        alert("ডেভেলপার ইনফো সফলভাবে আপডেট হয়েছে!");
       } catch (err) {
         console.error("Upload error:", err);
       } finally {
@@ -71,14 +82,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const triggerFileUpload = () => {
-    if (isMainAdmin && fileInputRef.current) {
+    if (isOwner && fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
   return (
     <>
-      {isMainAdmin && (
+      {isOwner && (
         <input 
           type="file" 
           ref={fileInputRef} 
@@ -153,7 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     onClick={triggerFileUpload}
                     className={`
                       w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-3 border-4 border-white shadow-lg overflow-hidden relative group/avatar
-                      ${isMainAdmin ? 'cursor-pointer hover:border-indigo-400 transition-all' : ''}
+                      ${isOwner ? 'cursor-pointer hover:border-indigo-400 transition-all ring-4 ring-indigo-50' : ''}
                       ${isUploading ? 'animate-pulse' : ''}
                     `}
                   >
@@ -166,7 +177,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     ) : (
                       <span className="text-4xl text-indigo-400">👤</span>
                     )}
-                    {isMainAdmin && (
+                    {isOwner && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
                         <span className="text-white text-lg">📷</span>
                       </div>
@@ -190,12 +201,18 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           <div className="space-y-3 pt-4 border-t border-slate-800/50">
-            {isAdmin && (
+            {isOwner && (
               <button 
                 onClick={() => setShowManager(true)}
-                className="w-full py-4 px-6 bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-2xl font-bold text-xs transition-all border border-indigo-500/20 flex items-center justify-center gap-3"
+                className="w-full py-4 px-6 bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-2xl font-bold text-xs transition-all border border-indigo-500/20 flex items-center justify-center gap-3 relative"
               >
-                <span className="text-lg">⚙️</span> Manage Access
+                <span className="text-lg">⚙️</span> Admin Dashboard
+                {logCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 text-[8px] text-white items-center justify-center">{logCount > 99 ? '99+' : logCount}</span>
+                  </span>
+                )}
               </button>
             )}
             <button 
@@ -208,7 +225,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </aside>
 
-      {showManager && <AccessManager isMainAdmin={isMainAdmin} onClose={() => setShowManager(false)} />}
+      {showManager && <AccessManager isOwner={isOwner} onClose={() => setShowManager(false)} />}
     </>
   );
 };

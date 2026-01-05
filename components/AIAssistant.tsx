@@ -49,7 +49,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ context }) => {
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2.5 rounded-2xl text-white backdrop-blur-sm">✨</div>
               <div>
-                <h3 className="text-white font-bold leading-none">Nexus Tutor</h3>
+                <h3 className="text-white font-bold leading-none">Nexus Tutor by TJ</h3>
                 <p className="text-indigo-100 text-[10px] mt-1 font-bold uppercase tracking-widest">AI Study Guide</p>
               </div>
             </div>
@@ -141,3 +141,4 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ context }) => {
 };
 
 export default AIAssistant;
+    

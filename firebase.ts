@@ -23,4 +23,5 @@ export const dbRefs = {
   students: () => ref(database, 'access/students'),
   admins: () => ref(database, 'access/admins'),
   developerInfo: () => ref(database, 'developerInfo'),
+  logs: () => ref(database, 'activityLogs'),
 };

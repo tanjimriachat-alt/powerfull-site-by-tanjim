@@ -7,9 +7,10 @@ interface ChapterCardProps {
   isAdmin: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onPlayClass: (url: string) => void;
 }
 
-const ChapterCard: React.FC<ChapterCardProps> = ({ chapter, isAdmin, onEdit, onDelete }) => {
+const ChapterCard: React.FC<ChapterCardProps> = ({ chapter, isAdmin, onEdit, onDelete, onPlayClass }) => {
   return (
     <div className="group relative bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
       {isAdmin && (
@@ -41,23 +42,21 @@ const ChapterCard: React.FC<ChapterCardProps> = ({ chapter, isAdmin, onEdit, onD
             <span className="font-semibold text-slate-700 font-bengali">{res.label}</span>
             <div className="flex gap-2">
               {res.vid && (
-                <a 
-                  href={res.vid} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                <button 
+                  onClick={() => onPlayClass(res.vid!)}
+                  className="px-4 py-2 bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all shadow-sm flex items-center gap-2"
                 >
-                  Class
-                </a>
+                  <span>▶</span> Class
+                </button>
               )}
               {res.pdf && (
                 <a 
                   href={res.pdf} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="px-4 py-2 bg-rose-100 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                  className="px-4 py-2 bg-rose-100 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-600 hover:text-white transition-all shadow-sm flex items-center gap-2"
                 >
-                  Notes
+                  <span>📄</span> Notes
                 </a>
               )}
             </div>

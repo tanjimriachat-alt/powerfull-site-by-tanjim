@@ -30,6 +30,15 @@ export interface DeveloperInfo {
   subtitle?: string;
 }
 
+export interface ActivityLog {
+  id?: string;
+  user: string;
+  action: string;
+  details: string;
+  timestamp: number;
+  ip: string;
+}
+
 export type SubjectKey = 'p1' | 'p2' | 'c1' | 'c2' | 'b1' | 'b2' | 'm1' | 'm2' | 'ict' | 'lan' | 'archive';
 
 export const SUBJECT_NAMES: Record<SubjectKey, string> = {
