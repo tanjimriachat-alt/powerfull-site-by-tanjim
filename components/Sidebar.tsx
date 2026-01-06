@@ -201,13 +201,15 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           <div className="space-y-3 pt-4 border-t border-slate-800/50">
-            {isOwner && (
+            {/* Show Admin Dashboard for ANY Admin (isOwner OR isAdmin) */}
+            {isAdmin && (
               <button 
                 onClick={() => setShowManager(true)}
                 className="w-full py-4 px-6 bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-2xl font-bold text-xs transition-all border border-indigo-500/20 flex items-center justify-center gap-3 relative"
               >
                 <span className="text-lg">⚙️</span> Admin Dashboard
-                {logCount > 0 && (
+                {/* Only Owner sees Live Notifications */}
+                {isOwner && logCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 text-[8px] text-white items-center justify-center">{logCount > 99 ? '99+' : logCount}</span>
@@ -225,7 +227,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </aside>
 
-      {showManager && <AccessManager isOwner={isOwner} onClose={() => setShowManager(false)} />}
+      {showManager && (
+        <AccessManager 
+          isOwner={isOwner} 
+          isAdmin={isAdmin}
+          onClose={() => setShowManager(false)} 
+        />
+      )}
     </>
   );
 };
