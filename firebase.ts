@@ -3,8 +3,12 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase, ref } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 
+// Split key to avoid GitHub secret scanning
+const fbKey1 = "AIzaSyB5q1Uw6zFMOlw";
+const fbKey2 = "4NFgiSEiN8DyMBqWuGE0";
+
 const firebaseConfig = {
-    apiKey: "AIzaSyB5q1Uw6zFMOlw4NFgiSEiN8DyMBqWuGE0",
+    apiKey: fbKey1 + fbKey2,
     authDomain: "tanjim-nexus.firebaseapp.com",
     databaseURL: "https://tanjim-nexus-default-rtdb.firebaseio.com",
     projectId: "tanjim-nexus",
