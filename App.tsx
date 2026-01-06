@@ -12,7 +12,7 @@ import AIAssistant from './components/AIAssistant.tsx';
 
 /**
  * SUPER ADMIN CONFIGURATION
- * Only this phone number gets Admin Access.
+ * Only this phone number gets Admin Access (Owner).
  */
 const SUPER_ADMIN_PHONE = "01874816789";
 
@@ -21,8 +21,8 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<string>('');
   
   // Roles
-  const [isAdmin, setIsAdmin] = useState(false); // Controls Edit UI
-  const [isOwner, setIsOwner] = useState(false); // Controls Access Manager / Developer Info
+  const [isAdmin, setIsAdmin] = useState(false); // Controls Edit UI (For Super Admin AND Sub Admins)
+  const [isOwner, setIsOwner] = useState(false); // Controls Access Manager / Logs (ONLY Super Admin)
 
   const [showLogin, setShowLogin] = useState<null | 'user' | 'admin'>(null);
   const [currentSubject, setCurrentSubject] = useState<SubjectKey>('p1');
@@ -114,23 +114,30 @@ const App: React.FC = () => {
       const data: AccessControl = snapshot.val() || { admins: {}, students: {} };
       
       let isValidUser = false;
+      let isDbAdmin = false; // Is this user in the 'admins' list?
       
       // Check admins list
       const foundAdmin = Object.values(data.admins || {}).find(a => a.u === u && a.p === p);
-      if (foundAdmin) isValidUser = true;
+      if (foundAdmin) {
+        isValidUser = true;
+        isDbAdmin = true;
+      }
 
       // Check students list
       const foundStudent = Object.values(data.students || {}).find(s => s.u === u && s.p === p);
       if (foundStudent) isValidUser = true;
 
-      // Hardcoded backdoors (legacy support converted to standard users unless Super Admin)
+      // Hardcoded backdoors (legacy support converted to Admins)
       if ((u === "01866280090" && p === "meherajwafi") || (u === "01847757205" && p === "MFT28")) {
          isValidUser = true;
+         isDbAdmin = true;
       }
       
       // Super Admin Hardcoded Check
-      if (u === SUPER_ADMIN_PHONE && p === "TANJIMRIACHAT@") {
+      const isSuperAdmin = (u === SUPER_ADMIN_PHONE && p === "TANJIMRIACHAT@");
+      if (isSuperAdmin) {
         isValidUser = true;
+        isDbAdmin = true; // Super admin is also an admin
       }
 
       if (!isValidUser) {
@@ -139,23 +146,25 @@ const App: React.FC = () => {
         return;
       }
 
-      // 2. Assign Roles STRICTLY based on Phone Number
-      const isSuperAdmin = u === SUPER_ADMIN_PHONE;
+      // 2. Assign Roles
+      // Super Admin: Can do EVERYTHING (Access Manager, Logs, Edit Content)
+      // Admin (Db): Can Edit Content
+      // Student: View Content Only
 
-      setIsAdmin(isSuperAdmin); // Only Tanjim can edit chapters
-      setIsOwner(isSuperAdmin); // Only Tanjim can see dashboard/logs
+      setIsOwner(isSuperAdmin); 
+      setIsAdmin(isSuperAdmin || isDbAdmin);
+      
       setCurrentUser(u);
       setIsAuthenticated(true);
       setShowLogin(null);
       
       localStorage.setItem('nexus_session', JSON.stringify({
-        isAdmin: isSuperAdmin,
+        isAdmin: (isSuperAdmin || isDbAdmin),
         isOwner: isSuperAdmin,
         user: u
       }));
 
       // 3. LOG THE LOGIN
-      // We don't await this to prevent blocking if logging is slow or fails
       logAction(u, 'LOGIN', 'User logged into portal');
 
     } catch (err: any) {

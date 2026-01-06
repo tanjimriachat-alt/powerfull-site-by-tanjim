@@ -11,7 +11,7 @@ export const getStudyHelp = async (question: string, context: string): Promise<S
   
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: [{
         role: 'user',
         parts: [{
@@ -28,8 +28,6 @@ Instructions:
         }]
       }],
       config: {
-        // Removed thinkingConfig for speed
-        // Removed googleSearch to ensure instant internal knowledge response unless absolutely necessary
         temperature: 0.7,
         maxOutputTokens: 500,
       }
@@ -37,7 +35,7 @@ Instructions:
 
     const text = response.text || "দুঃখিত, আমি উত্তরটি তৈরি করতে পারছি না। আবার চেষ্টা করুন।";
     
-    // Check for grounding (though less likely without explicit tool use, kept for safety)
+    // Check for grounding
     const candidate = response.candidates?.[0];
     const groundingChunks = candidate?.groundingMetadata?.groundingChunks || [];
     const citations = groundingChunks
