@@ -7,7 +7,13 @@ export interface StudyHelpResponse {
 }
 
 export const getStudyHelp = async (question: string, context: string): Promise<StudyHelpResponse> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // Fallback to hardcoded key if process.env fails in browser
+  // This fixes the "API Key must be set" error
+  const apiKey = (typeof process !== 'undefined' && process.env?.API_KEY) 
+    ? process.env.API_KEY 
+    : "AIzaSyB5q1Uw6zFMOlw4NFgiSEiN8DyMBqWuGE0";
+
+  const ai = new GoogleGenAI({ apiKey });
   
   try {
     const response = await ai.models.generateContent({
