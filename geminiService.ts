@@ -7,15 +7,13 @@ export interface StudyHelpResponse {
 }
 
 export const getStudyHelp = async (question: string, context: string): Promise<StudyHelpResponse> => {
-  // Reconstruct key from parts to avoid static analysis detection
-  const kPart1 = "AIzaSyAm9uR9LeMcbsCx";
-  const kPart2 = "ItGCKF4b3Nz-txvr6UM";
-  const fallbackKey = kPart1 + kPart2;
+  // We now read the API Key ONLY from the environment shim set in index.html
+  // This means you only need to update the Key in index.html, not here.
+  const apiKey = typeof process !== 'undefined' ? process.env?.API_KEY : undefined;
 
-  // Fallback to hardcoded key if process.env fails in browser
-  const apiKey = (typeof process !== 'undefined' && process.env?.API_KEY) 
-    ? process.env.API_KEY 
-    : fallbackKey;
+  if (!apiKey) {
+    return { text: "API Key পাওয়া যাচ্ছে না। index.html ফাইলে নতুন API Key বসানো হয়েছে কিনা চেক করুন।" };
+  }
 
   const ai = new GoogleGenAI({ apiKey });
   
@@ -58,8 +56,18 @@ Instructions:
       .filter((c: any) => c !== null);
 
     return { text, citations };
-  } catch (error) {
+  } catch (error: any) {
     console.error("AI Error:", error);
+    
+    // Specific error handling for API Key issues
+    if (error.status === 403 || error.message?.includes('403') || error.message?.includes('API_KEY_SERVICE_BLOCKED')) {
+      return { text: "API Key টি Google দ্বারা ব্লক করা হয়েছে। দয়া করে index.html ফাইলে একটি নতুন এবং ভ্যালিড API Key বসান।" };
+    }
+
+    if (error.status === 404 || error.message?.includes('NOT_FOUND')) {
+       return { text: "মডেল খুঁজে পাওয়া যাচ্ছে না। দয়া করে কোডের মডেল কনফিগারেশন চেক করুন।" };
+    }
+    
     return { text: "সার্ভারে সমস্যা হচ্ছে। ইন্টারনেট কানেকশন চেক করুন অথবা কিছুক্ষণ পর চেষ্টা করুন।" };
   }
 };
