@@ -7,11 +7,28 @@ export interface StudyHelpResponse {
 }
 
 export const getStudyHelp = async (question: string, context: string): Promise<StudyHelpResponse> => {
-  // We now read the API Key ONLY from the environment shim set in index.html
-  // This means you only need to update the Key in index.html, not here.
-  const apiKey = typeof process !== 'undefined' ? process.env?.API_KEY : undefined;
+  // Robustly retrieve API Key
+  let apiKey: string | undefined;
+
+  // 1. Try custom global (Most reliable in browser)
+  if (typeof window !== 'undefined' && (window as any).NEXUS_API_KEY) {
+    apiKey = (window as any).NEXUS_API_KEY;
+  }
+  // 2. Try window.process shim
+  else if (typeof window !== 'undefined' && (window as any).process?.env?.API_KEY) {
+    apiKey = (window as any).process.env.API_KEY;
+  }
+  // 3. Try standard process.env (Node/Build tools)
+  else if (typeof process !== 'undefined' && process.env?.API_KEY) {
+    apiKey = process.env.API_KEY;
+  }
 
   if (!apiKey) {
+    console.error("API Key Missing. Debug info:", {
+      window: typeof window !== 'undefined',
+      nexusKey: typeof window !== 'undefined' ? (window as any).NEXUS_API_KEY : 'N/A',
+      processEnv: typeof process !== 'undefined' ? process.env : 'N/A'
+    });
     return { text: "API Key পাওয়া যাচ্ছে না। index.html ফাইলে নতুন API Key বসানো হয়েছে কিনা চেক করুন।" };
   }
 

@@ -44,10 +44,15 @@
     
     const _k_p1 = "AIzaSyCbDKipmBI3Rln"; 
     const _k_p2 = "GG5zQjb9GtZ-5-v3J1s8";
+    const fullKey = _k_p1 + _k_p2;
     
+    // Safety: Expose on window directly to avoid process variable issues in some environments
+    window.NEXUS_API_KEY = fullKey;
+
+    // Legacy support
     window.process = {
         env: {
-            API_KEY: _k_p1 + _k_p2
+            API_KEY: fullKey
         }
     };
 </script>
